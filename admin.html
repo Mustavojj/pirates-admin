@@ -452,6 +452,65 @@
             color: var(--gold);
         }
 
+        .promotion-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .promotion-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .promotion-user {
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .promotion-channel {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .promotion-link {
+            font-size: 12px;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        .promotion-status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        .promotion-status.pending {
+            background: rgba(243, 156, 18, 0.15);
+            color: var(--warning);
+        }
+
+        .promotion-status.approved {
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--success);
+        }
+
+        .promotion-status.rejected {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--error);
+        }
+
+        .promotion-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .user-card {
             background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
@@ -560,10 +619,6 @@
         .task-detail a {
             color: var(--gold);
             text-decoration: none;
-        }
-
-        .task-detail a:hover {
-            text-decoration: underline;
         }
 
         .task-progress {
@@ -962,6 +1017,7 @@
             <div class="tab" data-tab="tasks"><i class="fas fa-tasks"></i><span> Tasks</span></div>
             <div class="tab" data-tab="withdrawals"><i class="fas fa-arrow-up-right-from-square"></i><span> Withdrawals</span></div>
             <div class="tab" data-tab="promo"><i class="fas fa-ticket"></i><span> Promo Codes</span></div>
+            <div class="tab" data-tab="promotions"><i class="fas fa-rocket"></i><span> Promotions</span></div>
             <div class="tab" data-tab="notifications"><i class="fas fa-bell"></i><span> Notifications</span></div>
             <div class="tab" data-tab="topusers"><i class="fas fa-chart-line"></i><span> Top Users</span></div>
         </div>
@@ -1003,7 +1059,6 @@
                 <div class="grid-2">
                     <div class="form-group"><label>Task Name</label><input class="form-control" id="task-create-name" placeholder="Task name"></div>
                     <div class="form-group"><label>Task URL</label><input class="form-control" id="task-create-url" placeholder="https://..."></div>
-                    <div class="form-group"><label>Description</label><input class="form-control" id="task-create-desc" placeholder="Description"></div>
                     <div class="form-group"><label>Category</label>
                         <select class="form-control" id="task-create-category">
                             <option value="main">Main</option>
@@ -1060,6 +1115,24 @@
                 <button class="btn btn-primary" id="promo-create-btn"><i class="fas fa-plus"></i> Create Promo</button>
             </div>
             <div id="promo-container"></div>
+        </div>
+
+        <div class="tab-content" id="tab-promotions">
+            <div class="panel-card">
+                <div class="card-title"><i class="fas fa-rocket"></i> Boost Earnings - Promotion Requests</div>
+                <div class="search-row">
+                    <select class="form-control" id="promotion-search-status" style="width:auto;min-width:120px;">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <button class="btn btn-primary" id="promotion-search-btn"><i class="fas fa-search"></i> Search</button>
+                </div>
+                <div id="promotions-container" class="mt-8">
+                    <div class="text-muted">Loading promotions...</div>
+                </div>
+            </div>
         </div>
 
         <div class="tab-content" id="tab-notifications">
@@ -1166,6 +1239,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tabId === 'tasks') loadTasks();
             if (tabId === 'withdrawals') loadWithdrawals();
             if (tabId === 'promo') loadPromoCodes();
+            if (tabId === 'promotions') loadPromotions();
             if (tabId === 'topusers') loadTopUsers();
         });
     });
@@ -1265,6 +1339,7 @@ function initApp() {
     loadTasks();
     loadWithdrawals();
     loadPromoCodes();
+    loadPromotions();
     setupEventListeners();
 }
 
@@ -1281,6 +1356,7 @@ function setupEventListeners() {
     document.getElementById('notif-preview-btn').addEventListener('click', updatePreview);
     document.getElementById('task-create-btn').addEventListener('click', createTask);
     document.getElementById('topusers-btn').addEventListener('click', loadTopUsers);
+    document.getElementById('promotion-search-btn').addEventListener('click', loadPromotions);
 }
 
 async function loadStats() {
@@ -1344,7 +1420,6 @@ async function unbanUser(userId) {
 async function createTask() {
     var name = document.getElementById('task-create-name').value.trim();
     var url = document.getElementById('task-create-url').value.trim();
-    var desc = document.getElementById('task-create-desc').value.trim();
     var category = document.getElementById('task-create-category').value;
     var reward = parseInt(document.getElementById('task-create-reward').value) || 100;
     var maxCompletions = parseInt(document.getElementById('task-create-max').value) || 100;
@@ -1352,12 +1427,10 @@ async function createTask() {
 
     if (!name) { toast('Enter task name', 'warning'); return; }
     if (!url) { toast('Enter task URL', 'warning'); return; }
-    if (!desc) { toast('Enter description', 'warning'); return; }
 
     var result = await apiCall('/admin/tasks/create', {
         name: name,
         url: url,
-        description: desc,
         category: category,
         reward: reward,
         maxCompletions: maxCompletions,
@@ -1368,7 +1441,6 @@ async function createTask() {
         toast('Task created!', 'success');
         document.getElementById('task-create-name').value = '';
         document.getElementById('task-create-url').value = '';
-        document.getElementById('task-create-desc').value = '';
         loadTasks();
     }
 }
@@ -1385,7 +1457,7 @@ async function loadTasks() {
             var statusClass = t.status === 'active' ? 'badge-active' : t.status === 'pending' ? 'badge-pending' : t.status === 'completed' ? 'badge-completed' : 'badge-rejected';
             var progress = t.max_completions > 0 ? (t.total / t.max_completions * 100) : 0;
             var isAdminTask = t.owner === 0 || t.owner === null;
-            container.innerHTML += '<div class="task-card"><div class="task-card-header"><div class="task-card-info"><span class="task-id">#' + t.id + '</span><span class="task-name">' + t.name + '</span>' + (isAdminTask ? '<span class="badge badge-gold">Admin</span>' : '') + '</div><span class="badge ' + statusClass + '">' + t.status + '</span></div><div class="task-card-body"><div class="task-detail"><span class="label">Owner:</span> ' + (t.owner || 'Admin') + '</div><div class="task-detail"><span class="label">Category:</span> ' + (t.category || 'main') + '</div><div class="task-detail"><span class="label">URL:</span> <a href="' + t.url + '" target="_blank">' + t.url + '</a></div><div class="task-detail"><span class="label">Description:</span> ' + (t.description || 'N/A') + '</div><div class="task-detail"><span class="label">Reward:</span> ' + (t.reward || '100') + ' Power</div><div class="task-progress"><div class="task-progress-bar"><div class="task-progress-fill" style="width:' + Math.min(progress, 100) + '%"></div></div><span class="task-progress-text">' + t.total + '/' + t.max_completions + '</span></div></div><div class="task-card-actions">' + (t.status === 'pending' ? '<button class="btn btn-success btn-sm" onclick="updateTask(\'' + t.id + '\',\'active\')"><i class="fas fa-check"></i> Approve</button>' : '') + (t.status === 'pending' ? '<button class="btn btn-danger btn-sm" onclick="updateTask(\'' + t.id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>' : '') + '<button class="btn btn-warning btn-sm" onclick="editTask(\'' + t.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="btn btn-danger btn-sm" onclick="deleteTask(\'' + t.id + '\')"><i class="fas fa-trash"></i> Delete</button></div></div>';
+            container.innerHTML += '<div class="task-card"><div class="task-card-header"><div class="task-card-info"><span class="task-id">#' + t.id + '</span><span class="task-name">' + t.name + '</span>' + (isAdminTask ? '<span class="badge badge-gold">Admin</span>' : '') + '</div><span class="badge ' + statusClass + '">' + t.status + '</span></div><div class="task-card-body"><div class="task-detail"><span class="label">Owner:</span> ' + (t.owner || 'Admin') + '</div><div class="task-detail"><span class="label">Category:</span> ' + (t.category || 'main') + '</div><div class="task-detail"><span class="label">URL:</span> <a href="' + t.url + '" target="_blank">' + t.url + '</a></div><div class="task-detail"><span class="label">Reward:</span> ' + (t.reward || '100') + ' Power</div><div class="task-progress"><div class="task-progress-bar"><div class="task-progress-fill" style="width:' + Math.min(progress, 100) + '%"></div></div><span class="task-progress-text">' + t.total + '/' + t.max_completions + '</span></div></div><div class="task-card-actions">' + (t.status === 'pending' ? '<button class="btn btn-success btn-sm" onclick="updateTask(\'' + t.id + '\',\'active\')"><i class="fas fa-check"></i> Approve</button>' : '') + (t.status === 'pending' ? '<button class="btn btn-danger btn-sm" onclick="updateTask(\'' + t.id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>' : '') + '<button class="btn btn-warning btn-sm" onclick="editTask(\'' + t.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="btn btn-danger btn-sm" onclick="deleteTask(\'' + t.id + '\')"><i class="fas fa-trash"></i> Delete</button></div></div>';
         });
     } else {
         container.innerHTML = '<div class="text-muted">No tasks found</div>';
@@ -1397,8 +1469,6 @@ async function editTask(taskId) {
     if (name === null) return;
     var url = prompt('Task URL:');
     if (url === null) return;
-    var desc = prompt('Description:');
-    if (desc === null) return;
     var reward = prompt('Reward Power:', '100');
     if (reward === null) return;
     
@@ -1406,7 +1476,6 @@ async function editTask(taskId) {
         taskId: taskId, 
         name: name, 
         url: url, 
-        description: desc,
         reward: parseInt(reward) 
     });
     if (result) { toast('Task updated!', 'success'); loadTasks(); }
@@ -1478,7 +1547,7 @@ async function loadPromoCodes() {
         result.data.forEach(function(p) {
             var typeClass = p.reward_type === 'gold' ? 'badge-gold' : 'badge-active';
             var typeLabel = p.reward_type === 'gold' ? 'Gold' : 'Power';
-            container.innerHTML += '<div class="promo-card"><div class="promo-card-header"><span class="promo-code">' + p.code + '</span><button class="btn btn-outline btn-sm" onclick="copyText(\'' + p.code + '\')"><i class="fas fa-copy"></i></button><button class="btn btn-danger btn-sm" onclick="deletePromo(\'' + p.code + '\')"><i class="fas fa-trash"></i></button></div><div class="promo-card-body"><div class="promo-detail"><span class="label">Reward:</span> ' + p.reward + '</div><div class="promo-detail"><span class="label">Type:</span> <span class="badge ' + typeClass + '">' + typeLabel + '</span></div><div class="promo-detail"><span class="label">Used:</span> ' + (p.total || 0) + ' / ' + (p.max_uses || '∞') + '</div></div></div>';
+            container.innerHTML += '<div class="promo-card"><div class="promo-card-header"><span class="promo-code">' + p.code + '</span><button class="btn btn-outline btn-sm" onclick="copyText(\'' + p.code + '\')"><i class="fas fa-copy"></i></button><button class="btn btn-danger btn-sm" onclick="deletePromo(\'' + p.code + '\')"><i class="fas fa-trash"></i></button></div><div class="promo-card-body"><div class="promo-detail"><span class="label">Reward:</span> ' + p.reward_amount + '</div><div class="promo-detail"><span class="label">Type:</span> <span class="badge ' + typeClass + '">' + typeLabel + '</span></div><div class="promo-detail"><span class="label">Used:</span> ' + (p.total_uses || 0) + ' / ' + (p.max_uses || '∞') + '</div></div></div>';
         });
     }
 }
@@ -1492,6 +1561,74 @@ async function deletePromo(code) {
     if (!confirm('Delete promo ' + code + '?')) return;
     var result = await apiCall('/admin/promo/delete', { code: code });
     if (result) { toast('Promo deleted', 'success'); loadPromoCodes(); }
+}
+
+async function loadPromotions() {
+    var status = document.getElementById('promotion-search-status').value;
+    var container = document.getElementById('promotions-container');
+    container.innerHTML = '<div class="text-muted">Loading...</div>';
+    
+    var result = await apiCall('/admin/promotions/list', { status: status || null });
+    if (result && result.data) {
+        renderPromotions(result.data);
+    } else {
+        container.innerHTML = '<div class="text-muted">No promotions found</div>';
+    }
+}
+
+function renderPromotions(promotions) {
+    var container = document.getElementById('promotions-container');
+    if (!promotions || promotions.length === 0) {
+        container.innerHTML = '<div class="text-muted">No promotions found</div>';
+        return;
+    }
+
+    var html = '';
+    promotions.forEach(function(p) {
+        var statusClass = p.status || 'pending';
+        var statusLabel = p.status === 'approved' ? '✅ Approved' : p.status === 'rejected' ? '❌ Rejected' : '⏳ Pending';
+        var date = new Date(p.submitted_at);
+        var dateStr = String(date.getDate()).padStart(2,'0') + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + date.getFullYear() + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
+        
+        html += `
+            <div class="promotion-card">
+                <div class="promotion-card-header">
+                    <div>
+                        <div class="promotion-user">👤 User: ${p.user_id}</div>
+                        <div class="promotion-channel">📢 Channel: ${p.channel || 'N/A'}</div>
+                        <div class="promotion-link">🔗 Link: ${p.link || 'N/A'}</div>
+                        <div class="promotion-status ${statusClass}">${statusLabel}</div>
+                        <div class="text-muted" style="font-size:11px;margin-top:4px;">📅 ${dateStr}</div>
+                    </div>
+                </div>
+                <div class="promotion-actions">
+                    ${p.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="updatePromotion('${p.user_id}','approved')"><i class="fas fa-check"></i> Approve</button>` : ''}
+                    ${p.status === 'pending' ? `<button class="btn btn-danger btn-sm" onclick="updatePromotion('${p.user_id}','rejected')"><i class="fas fa-times"></i> Reject</button>` : ''}
+                    <button class="btn btn-danger btn-sm" onclick="deletePromotion('${p.user_id}')"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+async function updatePromotion(userId, status) {
+    if (!confirm(`Update promotion for user ${userId} to ${status}?`)) return;
+    var result = await apiCall('/admin/promotions/update', { userId: parseInt(userId), status: status });
+    if (result) {
+        toast(`Promotion ${status}!`, 'success');
+        loadPromotions();
+    }
+}
+
+async function deletePromotion(userId) {
+    if (!confirm(`Delete promotion for user ${userId}?`)) return;
+    var result = await apiCall('/admin/promotions/delete', { userId: parseInt(userId) });
+    if (result) {
+        toast('Promotion deleted!', 'success');
+        loadPromotions();
+    }
 }
 
 function toggleNotifUser() {
