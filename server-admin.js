@@ -290,9 +290,9 @@ app.post('/api/admin/balance/deduct', async (req, res) => {
 
 app.post('/api/admin/tasks/create', async (req, res) => {
     try {
-        const { name, url, description, category, reward, maxCompletions, owner } = req.body;
+        const { name, url, category, reward, maxCompletions, owner } = req.body;
         
-        if (!name || !url || !description) {
+        if (!name || !url) {
             return res.status(400).json({ success: false, error: 'Missing required fields' });
         }
         if (!validateNumber(reward, 1)) {
@@ -306,7 +306,6 @@ app.post('/api/admin/tasks/create', async (req, res) => {
             id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
             name,
             url,
-            description,
             category: category || 'main',
             reward: parseInt(reward) || 100,
             max_completions: maxCompletions || 100,
@@ -353,7 +352,7 @@ app.post('/api/admin/tasks/list', async (req, res) => {
 
 app.post('/api/admin/tasks/update', async (req, res) => {
     try {
-        const { taskId, name, url, description, reward } = req.body;
+        const { taskId, name, url, reward } = req.body;
         
         if (!taskId) {
             return res.status(400).json({ success: false, error: 'Task ID required' });
@@ -362,7 +361,6 @@ app.post('/api/admin/tasks/update', async (req, res) => {
         const updateData = {};
         if (name) updateData.name = name;
         if (url) updateData.url = url;
-        if (description) updateData.description = description;
         if (reward !== undefined) {
             updateData.reward = parseInt(reward);
         }
@@ -599,6 +597,117 @@ app.post('/api/admin/promo/delete', async (req, res) => {
             .delete()
             .eq('code', code);
         if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/admin/promotions/list', async (req, res) => {
+    try {
+        const { status } = req.body;
+        let query = supabase
+            .from('users')
+            .select('id, first_name, promotion')
+            .not('promotion', 'is', null);
+        
+        if (status) {
+            query = query.contains('promotion', { status: status });
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        const formattedData = data.map(u => ({
+            user_id: u.id,
+            first_name: u.first_name || 'User',
+            channel: u.promotion?.channel || null,
+            link: u.promotion?.link || null,
+            status: u.promotion?.status || 'pending',
+            submitted_at: u.promotion?.submitted_at || Date.now()
+        }));
+        
+        res.json({ success: true, data: formattedData });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/admin/promotions/update', async (req, res) => {
+    try {
+        const { userId, status } = req.body;
+        
+        if (!validateUserId(userId)) {
+            return res.status(400).json({ success: false, error: 'Invalid user ID' });
+        }
+        if (!['pending', 'approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ success: false, error: 'Invalid status' });
+        }
+        
+        const { data: userData, error: fetchError } = await supabase
+            .from('users')
+            .select('promotion, first_name')
+            .eq('id', userId)
+            .single();
+        
+        if (fetchError || !userData) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+        
+        if (!userData.promotion) {
+            return res.status(404).json({ success: false, error: 'No promotion found for this user' });
+        }
+        
+        const updatedPromotion = {
+            ...userData.promotion,
+            status: status,
+            updated_at: Date.now()
+        };
+        
+        const { error } = await supabase
+            .from('users')
+            .update({ promotion: updatedPromotion })
+            .eq('id', userId);
+        
+        if (error) throw error;
+        
+        await notifyUser(userId,
+            `<b>📢 Promotion Update</b>\n\n` +
+            `<b>Status:</b> ${status.toUpperCase()}\n` +
+            `<b>Channel:</b> ${userData.promotion.channel || 'N/A'}\n\n` +
+            (status === 'approved' ? `✅ Your promotion has been approved! You now receive +25% earnings.` : 
+             status === 'rejected' ? `❌ Your promotion request has been rejected. Please try again.` : 
+             `⏳ Your promotion request is pending review.`)
+        );
+        
+        await notifyAdmin(
+            `<b>📢 Promotion ${status.toUpperCase()}</b>\n\n` +
+            `<b>User:</b> ${userData.first_name || userId} (${userId})\n` +
+            `<b>Channel:</b> ${userData.promotion.channel || 'N/A'}\n` +
+            `<b>Link:</b> ${userData.promotion.link || 'N/A'}`
+        );
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/admin/promotions/delete', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        
+        if (!validateUserId(userId)) {
+            return res.status(400).json({ success: false, error: 'Invalid user ID' });
+        }
+        
+        const { error } = await supabase
+            .from('users')
+            .update({ promotion: null })
+            .eq('id', userId);
+        
+        if (error) throw error;
+        
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
