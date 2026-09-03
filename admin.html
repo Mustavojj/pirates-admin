@@ -1008,8 +1008,9 @@
 
         <div class="stats-grid" id="stats-grid">
             <div class="stat-card"><div class="value" id="stat-users">-</div><div class="label">Total Users</div></div>
-            <div class="stat-card"><div class="value" id="stat-gold">-</div><div class="label">Total Gold</div></div>
-            <div class="stat-card"><div class="value" id="stat-power">-</div><div class="label">Total Power</div></div>
+            <div class="stat-card"><div class="value" id="stat-withdrawals">-</div><div class="label">Total Withdrawals</div></div>
+            <div class="stat-card"><div class="value" id="stat-tasks">-</div><div class="label">Total Tasks</div></div>
+            <div class="stat-card"><div class="value" id="stat-codes">-</div><div class="label">Total Codes</div></div>
         </div>
 
         <div class="tabs" id="tabs">
@@ -1040,15 +1041,16 @@
                     <input class="form-control" id="task-search-owner" placeholder="Filter by Owner ID..." type="number">
                     <select class="form-control" id="task-search-status" style="width:auto;min-width:120px;">
                         <option value="">All Status</option>
-                        <option value="pending">Pending</option>
                         <option value="active">Active</option>
+                        <option value="pending">Pending</option>
                         <option value="completed">Completed</option>
                         <option value="rejected">Rejected</option>
                     </select>
-                    <select class="form-control" id="task-search-creator" style="width:auto;min-width:120px;">
-                        <option value="">All Creators</option>
-                        <option value="admin">Admin Created</option>
-                        <option value="user">User Created</option>
+                    <select class="form-control" id="task-search-category" style="width:auto;min-width:120px;">
+                        <option value="">All Categories</option>
+                        <option value="main">Main</option>
+                        <option value="partner">Partner</option>
+                        <option value="social">Social</option>
                     </select>
                     <button class="btn btn-primary" id="task-search-btn"><i class="fas fa-search"></i> Search</button>
                 </div>
@@ -1063,11 +1065,19 @@
                         <select class="form-control" id="task-create-category">
                             <option value="main">Main</option>
                             <option value="partner">Partner</option>
+                            <option value="social">Social</option>
                         </select>
                     </div>
                     <div class="form-group"><label>Reward Power</label><input class="form-control" id="task-create-reward" type="number" value="100"></div>
                     <div class="form-group"><label>Max Completions</label><input class="form-control" id="task-create-max" type="number" value="100"></div>
                     <div class="form-group"><label>Owner ID</label><input class="form-control" id="task-create-owner" type="number" placeholder="Admin = 0"></div>
+                    <div class="form-group"><label>Gold Reward (Social only)</label><input class="form-control" id="task-create-gold" type="number" value="1" placeholder="1 Gold"></div>
+                    <div class="form-group"><label>Verification Required</label>
+                        <select class="form-control" id="task-create-verification">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
                 </div>
                 <button class="btn btn-primary" id="task-create-btn"><i class="fas fa-plus"></i> Create Task</button>
             </div>
@@ -1363,8 +1373,9 @@ async function loadStats() {
     var result = await apiCall('/admin/stats');
     if (result) {
         document.getElementById('stat-users').textContent = result.data.totalUsers || 0;
-        document.getElementById('stat-gold').textContent = result.data.totalGold || '0';
-        document.getElementById('stat-power').textContent = result.data.totalPower || '0';
+        document.getElementById('stat-withdrawals').textContent = result.data.totalWithdrawals || 0;
+        document.getElementById('stat-tasks').textContent = result.data.totalTasks || 0;
+        document.getElementById('stat-codes').textContent = result.data.totalCodes || 0;
     }
 }
 
@@ -1424,6 +1435,8 @@ async function createTask() {
     var reward = parseInt(document.getElementById('task-create-reward').value) || 100;
     var maxCompletions = parseInt(document.getElementById('task-create-max').value) || 100;
     var owner = parseInt(document.getElementById('task-create-owner').value) || 0;
+    var goldReward = parseInt(document.getElementById('task-create-gold').value) || 1;
+    var verification = document.getElementById('task-create-verification').value === 'true';
 
     if (!name) { toast('Enter task name', 'warning'); return; }
     if (!url) { toast('Enter task URL', 'warning'); return; }
@@ -1434,7 +1447,9 @@ async function createTask() {
         category: category,
         reward: reward,
         maxCompletions: maxCompletions,
-        owner: owner
+        owner: owner,
+        goldReward: goldReward,
+        verification: verification
     });
 
     if (result) {
@@ -1448,8 +1463,8 @@ async function createTask() {
 async function loadTasks() {
     var owner = document.getElementById('task-search-owner').value;
     var status = document.getElementById('task-search-status').value;
-    var creator = document.getElementById('task-search-creator').value;
-    var result = await apiCall('/admin/tasks/list', { owner: owner ? parseInt(owner) : null, status: status || null, creator: creator || null });
+    var category = document.getElementById('task-search-category').value;
+    var result = await apiCall('/admin/tasks/list', { owner: owner ? parseInt(owner) : null, status: status || null, category: category || null });
     var container = document.getElementById('tasks-container');
     container.innerHTML = '';
     if (result && result.data && result.data.length > 0) {
@@ -1457,7 +1472,8 @@ async function loadTasks() {
             var statusClass = t.status === 'active' ? 'badge-active' : t.status === 'pending' ? 'badge-pending' : t.status === 'completed' ? 'badge-completed' : 'badge-rejected';
             var progress = t.max_completions > 0 ? (t.total / t.max_completions * 100) : 0;
             var isAdminTask = t.owner === 0 || t.owner === null;
-            container.innerHTML += '<div class="task-card"><div class="task-card-header"><div class="task-card-info"><span class="task-id">#' + t.id + '</span><span class="task-name">' + t.name + '</span>' + (isAdminTask ? '<span class="badge badge-gold">Admin</span>' : '') + '</div><span class="badge ' + statusClass + '">' + t.status + '</span></div><div class="task-card-body"><div class="task-detail"><span class="label">Owner:</span> ' + (t.owner || 'Admin') + '</div><div class="task-detail"><span class="label">Category:</span> ' + (t.category || 'main') + '</div><div class="task-detail"><span class="label">URL:</span> <a href="' + t.url + '" target="_blank">' + t.url + '</a></div><div class="task-detail"><span class="label">Reward:</span> ' + (t.reward || '100') + ' Power</div><div class="task-progress"><div class="task-progress-bar"><div class="task-progress-fill" style="width:' + Math.min(progress, 100) + '%"></div></div><span class="task-progress-text">' + t.total + '/' + t.max_completions + '</span></div></div><div class="task-card-actions">' + (t.status === 'pending' ? '<button class="btn btn-success btn-sm" onclick="updateTask(\'' + t.id + '\',\'active\')"><i class="fas fa-check"></i> Approve</button>' : '') + (t.status === 'pending' ? '<button class="btn btn-danger btn-sm" onclick="updateTask(\'' + t.id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>' : '') + '<button class="btn btn-warning btn-sm" onclick="editTask(\'' + t.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="btn btn-danger btn-sm" onclick="deleteTask(\'' + t.id + '\')"><i class="fas fa-trash"></i> Delete</button></div></div>';
+            var categoryIcon = t.category === 'social' ? '<i class="fas fa-users"></i>' : t.category === 'partner' ? '<i class="fas fa-handshake"></i>' : '<i class="fas fa-home"></i>';
+            container.innerHTML += '<div class="task-card"><div class="task-card-header"><div class="task-card-info"><span class="task-id">#' + t.id + '</span><span class="task-name">' + t.name + '</span>' + (isAdminTask ? '<span class="badge badge-gold">Admin</span>' : '') + '<span class="badge" style="background:rgba(255,215,0,0.08);color:var(--gold);">' + categoryIcon + ' ' + (t.category || 'main') + '</span></div><span class="badge ' + statusClass + '">' + t.status + '</span></div><div class="task-card-body"><div class="task-detail"><span class="label">Owner:</span> ' + (t.owner || 'Admin') + '</div><div class="task-detail"><span class="label">URL:</span> <a href="' + t.url + '" target="_blank">' + t.url + '</a></div><div class="task-detail"><span class="label">Reward:</span> ' + (t.reward || '0') + ' Power' + (t.gold_reward ? ' + ' + t.gold_reward + ' Gold' : '') + '</div><div class="task-progress"><div class="task-progress-bar"><div class="task-progress-fill" style="width:' + Math.min(progress, 100) + '%"></div></div><span class="task-progress-text">' + t.total + '/' + t.max_completions + '</span></div></div><div class="task-card-actions">' + (t.status === 'pending' ? '<button class="btn btn-success btn-sm" onclick="updateTask(\'' + t.id + '\',\'active\')"><i class="fas fa-check"></i> Approve</button>' : '') + (t.status === 'pending' ? '<button class="btn btn-danger btn-sm" onclick="updateTask(\'' + t.id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>' : '') + '<button class="btn btn-warning btn-sm" onclick="editTask(\'' + t.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="btn btn-danger btn-sm" onclick="deleteTask(\'' + t.id + '\')"><i class="fas fa-trash"></i> Delete</button></div></div>';
         });
     } else {
         container.innerHTML = '<div class="text-muted">No tasks found</div>';
