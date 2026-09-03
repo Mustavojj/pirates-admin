@@ -107,28 +107,31 @@ app.post('/api/admin/stats', async (req, res) => {
         
         if (usersError) throw usersError;
         
-        const { data: goldData, error: goldError } = await supabase
-            .from('users')
-            .select('gold_balance');
+        const { count: totalWithdrawals, error: withdrawalsError } = await supabase
+            .from('withdrawals')
+            .select('id', { count: 'exact', head: true });
         
-        if (goldError) throw goldError;
+        if (withdrawalsError) throw withdrawalsError;
         
-        const totalGold = goldData.reduce((sum, u) => sum + (u.gold_balance || 0), 0);
+        const { count: totalTasks, error: tasksError } = await supabase
+            .from('tasks')
+            .select('id', { count: 'exact', head: true });
         
-        const { data: powerData, error: powerError } = await supabase
-            .from('users')
-            .select('power_balance');
+        if (tasksError) throw tasksError;
         
-        if (powerError) throw powerError;
+        const { count: totalCodes, error: codesError } = await supabase
+            .from('promo_codes')
+            .select('code', { count: 'exact', head: true });
         
-        const totalPower = powerData.reduce((sum, u) => sum + (u.power_balance || 0), 0);
+        if (codesError) throw codesError;
         
         res.json({
             success: true,
             data: {
                 totalUsers: totalUsers || 0,
-                totalGold: parseFloat(totalGold.toFixed(5)),
-                totalPower: Math.floor(totalPower)
+                totalWithdrawals: totalWithdrawals || 0,
+                totalTasks: totalTasks || 0,
+                totalCodes: totalCodes || 0
             }
         });
     } catch (error) {
@@ -290,7 +293,7 @@ app.post('/api/admin/balance/deduct', async (req, res) => {
 
 app.post('/api/admin/tasks/create', async (req, res) => {
     try {
-        const { name, url, category, reward, maxCompletions, owner } = req.body;
+        const { name, url, category, reward, maxCompletions, owner, goldReward, verification } = req.body;
         
         if (!name || !url) {
             return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -313,7 +316,10 @@ app.post('/api/admin/tasks/create', async (req, res) => {
             status: 'active',
             owner: owner || 0,
             created_at: Date.now(),
-            verification: true
+            verification: verification !== undefined ? verification : true,
+            gold_reward: parseInt(goldReward) || 0,
+            total_completed: 0,
+            notified: false
         };
         
         const { data, error } = await supabase
@@ -330,7 +336,7 @@ app.post('/api/admin/tasks/create', async (req, res) => {
 
 app.post('/api/admin/tasks/list', async (req, res) => {
     try {
-        const { status, owner, creator } = req.body;
+        const { status, owner, category } = req.body;
         let query = supabase
             .from('tasks')
             .select('*')
@@ -338,8 +344,7 @@ app.post('/api/admin/tasks/list', async (req, res) => {
         
         if (status) query = query.eq('status', status);
         if (owner && validateUserId(owner)) query = query.eq('owner', owner);
-        if (creator === 'admin') query = query.eq('owner', 0);
-        if (creator === 'user') query = query.neq('owner', 0);
+        if (category) query = query.eq('category', category);
         
         const { data, error } = await query;
         if (error) throw error;
@@ -727,7 +732,6 @@ app.post('/api/admin/notifications/send', async (req, res) => {
         }
         
         let users = [];
-        let total = 0;
         
         if (target === 'all') {
             let allUsers = [];
@@ -755,17 +759,15 @@ app.post('/api/admin/notifications/send', async (req, res) => {
             }
             
             users = allUsers.map(u => u.id);
-            total = users.length;
         } else if (target === 'single' && validateUserId(userId)) {
             users = [userId];
-            total = 1;
         } else {
             return res.status(400).json({ success: false, error: 'Invalid target' });
         }
         
         let sent = 0;
         let failed = 0;
-        const batchSize = 20;
+        const batchSize = 30;
         const totalUsers = users.length;
         
         let replyMarkup = null;
@@ -782,7 +784,7 @@ app.post('/api/admin/notifications/send', async (req, res) => {
         
         for (let i = 0; i < users.length; i += batchSize) {
             const batch = users.slice(i, i + batchSize);
-            await Promise.all(batch.map(async (uid) => {
+            const promises = batch.map(async (uid) => {
                 try {
                     let response;
                     
@@ -821,7 +823,17 @@ app.post('/api/admin/notifications/send', async (req, res) => {
                 } catch (error) {
                     failed++;
                 }
-            }));
+            });
+            
+            await Promise.all(promises);
+            
+            if (totalUsers > 0) {
+                const progress = Math.min(100, ((i + batchSize) / totalUsers) * 100);
+                const progressFill = document.getElementById('notif-progress-fill');
+                const statusText = document.getElementById('notif-status-text');
+                if (progressFill) progressFill.style.width = progress + '%';
+                if (statusText) statusText.textContent = `Sending... ${Math.min(i + batchSize, totalUsers)}/${totalUsers} (Sent: ${sent}, Failed: ${failed})`;
+            }
         }
         
         await notifyAdmin(
