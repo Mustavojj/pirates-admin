@@ -109,6 +109,8 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         if (!BOT_TOKEN) return { success: false, error: 'Bot not configured' };
         if (!channelId) return { success: false, error: 'Channel ID required' };
 
+        const PROMO_IMAGE_URL = 'https://i.ibb.co/W4FRWY3z/c53854a65b5a.jpg';
+
         let chatId = channelId;
         const channelMatch = channelId.match(/t\.me\/([^\/\?]+)/);
         if (channelMatch) {
@@ -141,27 +143,40 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
             { text: 'CLAIM NOW', url: userLink }
         ] : [];
 
-        const payload = {
-            chat_id: chatId,
-            text: message,
-            parse_mode: 'HTML',
-            disable_web_page_preview: true
-        };
+        const replyMarkup = buttons.length > 0 ? {
+            inline_keyboard: [buttons.map(btn => ({
+                text: btn.text,
+                url: btn.url
+            }))]
+        } : undefined;
 
-        if (buttons.length > 0) {
-            payload.reply_markup = {
-                inline_keyboard: [buttons.map(btn => ({
-                    text: btn.text,
-                    url: btn.url
-                }))]
-            };
+        let response;
+        if (PROMO_IMAGE_URL) {
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    photo: PROMO_IMAGE_URL,
+                    caption: caption,
+                    parse_mode: 'HTML',
+                    reply_markup: replyMarkup,
+                    disable_web_page_preview: true
+                })
+            });
+        } else {
+            response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: caption,
+                    parse_mode: 'HTML',
+                    reply_markup: replyMarkup,
+                    disable_web_page_preview: true
+                })
+            });
         }
-
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
 
         const data = await response.json();
         if (data.ok) {
@@ -176,7 +191,6 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         return { success: false, error: error.message };
     }
 }
-
 
 async function getApprovedPromotions() {
     try {
@@ -754,6 +768,7 @@ app.post('/api/admin/promo/create', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 
 app.post('/api/admin/promo/list', async (req, res) => {
     try {
