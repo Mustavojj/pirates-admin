@@ -109,6 +109,16 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         if (!BOT_TOKEN) return { success: false, error: 'Bot not configured' };
         if (!channelId) return { success: false, error: 'Channel ID required' };
 
+        let chatId = channelLink;
+        const channelMatch = channelLink.match(/t\.me\/([^\/\?]+)/);
+        if (channelMatch) {
+            chatId = '@' + channelMatch[1];
+        }
+
+        if (!isNaN(chatId) && !chatId.toString().startsWith('-100')) {
+            chatId = '-100' + chatId;
+        }
+
         const rewardLabel = rewardType === 'gold' ? 'GOLD' : 'POWER';
         const message = `<b>🆕 NEW PROMO CODE</b>\n\n` +
             `<b>🔰 CODE:</b> <code>${code}</code>\n` +
