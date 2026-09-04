@@ -135,10 +135,10 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
             `<b>🔰 CODE:</b> <code>${code}</code>\n` +
             `<b>🔰 REWARD:</b> ${reward} ${rewardLabel}\n` +
             `<b>🔰 PROGRESS:</b> 0/${total}\n\n` +
-            `🏴‍☠️ Claim this code on <b>GRAM Pirates</b>`;
+            `🏴‍☠️ <b>GRAM PIRATES | MINE & EARN</b>`;
 
         const buttons = userLink ? [
-            { text: '⚡ Claim Now', url: userLink }
+            { text: 'CLAIM NOW', url: userLink }
         ] : [];
 
         const payload = {
