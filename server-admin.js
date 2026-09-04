@@ -158,7 +158,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
                 body: JSON.stringify({
                     chat_id: chatId,
                     photo: PROMO_IMAGE_URL,
-                    caption: caption,
+                    caption: message,
                     parse_mode: 'HTML',
                     reply_markup: replyMarkup,
                     disable_web_page_preview: true
