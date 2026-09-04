@@ -109,7 +109,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         if (!BOT_TOKEN) return { success: false, error: 'Bot not configured' };
         if (!channelId) return { success: false, error: 'Channel ID required' };
 
-        const PROMO_IMAGE_URL = 'https://i.ibb.co/W4FRWY3z/c53854a65b5a.jpg';
+        const PROMO_IMAGE_URL = 'https://i.ibb.co/67t7h1rw/file-00000000076c81f49059cc2718099d35.png';
 
         let chatId = channelId;
         const channelMatch = channelId.match(/t\.me\/([^\/\?]+)/);
