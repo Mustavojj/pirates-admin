@@ -31,6 +31,8 @@ const supabase = createClient(
 );
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '12345';
+const ADMIN_CHAT_ID = parseInt(process.env.ADMIN_CHAT_ID) || 1891231976;
+const BOT_TOKEN = process.env.BOT_TOKEN;
 
 function validateUserId(userId) {
     return userId && typeof userId === 'number' && userId > 0;
@@ -48,45 +50,137 @@ function getServerTime() {
     return Date.now();
 }
 
-async function notifyUser(userId, message) {
+async function notifyUser(userId, message, buttons = null) {
     try {
-        const BOT_TOKEN = process.env.BOT_TOKEN;
         if (!BOT_TOKEN) return false;
+        
+        const payload = {
+            chat_id: userId,
+            text: message,
+            parse_mode: 'HTML'
+        };
+        
+        if (buttons && buttons.length > 0) {
+            payload.reply_markup = {
+                inline_keyboard: [buttons.map(btn => ({
+                    text: btn.text,
+                    url: btn.url
+                }))]
+            };
+        }
         
         const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: userId,
-                text: message,
-                parse_mode: 'HTML'
-            })
+            body: JSON.stringify(payload)
         });
         
         const data = await response.json();
+        console.log(`📤 [notifyUser] User ${userId}:`, data.ok ? 'Sent' : 'Failed', data.description);
         return data.ok;
     } catch (error) {
+        console.error('❌ [notifyUser] Error:', error.message);
         return false;
     }
 }
 
 async function notifyAdmin(message) {
     try {
-        const adminId = process.env.ADMIN_CHAT_ID;
-        if (!adminId) return;
-        const BOT_TOKEN = process.env.BOT_TOKEN;
-        if (!BOT_TOKEN) return;
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        if (!ADMIN_CHAT_ID || !BOT_TOKEN) return false;
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                chat_id: adminId,
+                chat_id: ADMIN_CHAT_ID,
                 text: message,
                 parse_mode: 'HTML'
             })
         });
+        const data = await response.json();
+        return data.ok;
     } catch (error) {
-        return;
+        console.error('❌ [notifyAdmin] Error:', error.message);
+        return false;
+    }
+}
+
+async function sendPromoToChannel(channelId, code, reward, rewardType, total, userLink) {
+    try {
+        if (!BOT_TOKEN) return { success: false, error: 'Bot not configured' };
+        if (!channelId) return { success: false, error: 'Channel ID required' };
+
+        const rewardLabel = rewardType === 'gold' ? 'GOLD' : 'POWER';
+        const message = `<b>🆕 NEW PROMO CODE</b>\n\n` +
+            `<b>🔰 CODE:</b> <code>${code}</code>\n` +
+            `<b>🔰 REWARD:</b> ${reward} ${rewardLabel}\n` +
+            `<b>🔰 PROGRESS:</b> 0/${total}\n\n` +
+            `🏴‍☠️ Claim this code on <b>GRAM Pirates</b>`;
+
+        const buttons = userLink ? [
+            { text: '⚡ Claim Now', url: userLink }
+        ] : [];
+
+        const payload = {
+            chat_id: channelId,
+            text: message,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+        };
+
+        if (buttons.length > 0) {
+            payload.reply_markup = {
+                inline_keyboard: [buttons.map(btn => ({
+                    text: btn.text,
+                    url: btn.url
+                }))]
+            };
+        }
+
+        console.log(`📤 [sendPromoToChannel] Sending to ${channelId}...`);
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (data.ok) {
+            console.log(`✅ [sendPromoToChannel] Sent to ${channelId}`);
+            return { success: true };
+        } else {
+            console.log(`❌ [sendPromoToChannel] Failed: ${data.description}`);
+            return { success: false, error: data.description || 'Unknown error' };
+        }
+    } catch (error) {
+        console.error('❌ [sendPromoToChannel] Error:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+async function getApprovedPromotions() {
+    try {
+        console.log('🔍 [getApprovedPromotions] Fetching approved promotions...');
+        const { data, error } = await supabase
+            .from('users')
+            .select('id, first_name, promotion')
+            .not('promotion', 'is', null)
+            .contains('promotion', { status: 'approved' });
+
+        if (error) throw error;
+        console.log(`✅ [getApprovedPromotions] Found ${data?.length || 0} approved promotions`);
+        
+        const formattedData = (data || []).map(u => ({
+            user_id: u.id,
+            first_name: u.first_name || 'User',
+            channel: u.promotion?.channel || null,
+            link: u.promotion?.link || null,
+            username: u.promotion?.username || null
+        })).filter(p => p.channel);
+
+        return formattedData;
+    } catch (error) {
+        console.error('❌ [getApprovedPromotions] Error:', error.message);
+        return [];
     }
 }
 
@@ -311,12 +405,13 @@ app.post('/api/admin/tasks/create', async (req, res) => {
             url,
             category: category || 'main',
             reward: parseInt(reward) || 100,
-            total: maxCompletions,
+            total: maxCompletions || 100,
+            total_completed: 0,
             status: 'active',
             owner: owner || 0,
             created_at: Date.now(),
             verification: verification !== undefined ? verification : true,
-            total_completed: 0,
+            gold_reward: parseInt(goldReward) || 0,
             notified: false
         };
         
@@ -541,7 +636,9 @@ app.post('/api/admin/withdrawals/delete', async (req, res) => {
 
 app.post('/api/admin/promo/create', async (req, res) => {
     try {
-        const { code, reward, rewardType, maxUses } = req.body;
+        const { code, reward, rewardType, maxUses, notifyChannels } = req.body;
+        
+        console.log('🔍 [promo/create] Creating promo:', { code, reward, rewardType, maxUses, notifyChannels });
         
         if (!code || !reward) {
             return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -568,8 +665,72 @@ app.post('/api/admin/promo/create', async (req, res) => {
             .select();
         
         if (error) throw error;
-        res.json({ success: true, data: data[0] });
+        console.log('✅ [promo/create] Promo created in DB');
+        
+        let sent = 0;
+        let failed = 0;
+        let total = 0;
+        let failedChannels = [];
+        
+        if (notifyChannels) {
+            console.log('📢 [promo/create] Notifying channels...');
+            const promotions = await getApprovedPromotions();
+            total = promotions.length;
+            
+            for (const promo of promotions) {
+                const channelId = promo.channel;
+                const userLink = promo.link || `https://t.me/GramPirateBot/app?startapp=${promo.user_id}`;
+                
+                const result = await sendPromoToChannel(
+                    channelId,
+                    code,
+                    reward,
+                    rewardType,
+                    maxUses || 999999,
+                    userLink
+                );
+                
+                if (result.success) {
+                    sent++;
+                } else {
+                    failed++;
+                    failedChannels.push({
+                        channel: channelId,
+                        user_id: promo.user_id,
+                        error: result.error || 'Unknown error'
+                    });
+                }
+            }
+            
+            let reportMessage = `<b>📢 Promo Code Sent to Channels</b>\n\n` +
+                `<b>🔰 CODE:</b> <code>${code}</code>\n` +
+                `<b>📊 Total Channels:</b> ${total}\n` +
+                `<b>✅ Sent:</b> ${sent}\n` +
+                `<b>❌ Failed:</b> ${failed}\n\n`;
+            
+            if (failedChannels.length > 0) {
+                reportMessage += `<b>❌ Failed Channels:</b>\n`;
+                failedChannels.forEach(fc => {
+                    reportMessage += `• User ${fc.user_id}: ${fc.channel} - ${fc.error}\n`;
+                });
+            } else {
+                reportMessage += `✅ All channels notified successfully!`;
+            }
+            
+            await notifyAdmin(reportMessage);
+            console.log(`📊 [promo/create] Report: Sent=${sent}, Failed=${failed}, Total=${total}`);
+        }
+        
+        res.json({ 
+            success: true, 
+            data: data[0],
+            sent,
+            failed,
+            total,
+            failedChannels
+        });
     } catch (error) {
+        console.error('❌ [promo/create] Error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -720,18 +881,22 @@ app.post('/api/admin/promotions/delete', async (req, res) => {
 app.post('/api/admin/notifications/send', async (req, res) => {
     try {
         const { userId, message, buttons, target, photoUrl } = req.body;
-        const BOT_TOKEN = process.env.BOT_TOKEN;
+        
+        console.log('🔍 [notifications/send] Starting...', { target, userId, messageLength: message?.length });
         
         if (!BOT_TOKEN) {
+            console.error('❌ [notifications/send] Bot token not configured');
             return res.status(400).json({ success: false, error: 'Bot not configured' });
         }
         if (!message) {
+            console.error('❌ [notifications/send] Message is empty');
             return res.status(400).json({ success: false, error: 'Message required' });
         }
         
         let users = [];
         
         if (target === 'all') {
+            console.log('📊 [notifications/send] Fetching all users...');
             let allUsers = [];
             let page = 0;
             const pageSize = 1000;
@@ -744,7 +909,10 @@ app.post('/api/admin/notifications/send', async (req, res) => {
                     .eq('state', 'active')
                     .range(page * pageSize, (page + 1) * pageSize - 1);
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ [notifications/send] Supabase error:', error.message);
+                    throw error;
+                }
                 
                 if (data && data.length > 0) {
                     allUsers = allUsers.concat(data);
@@ -757,10 +925,18 @@ app.post('/api/admin/notifications/send', async (req, res) => {
             }
             
             users = allUsers.map(u => u.id);
+            console.log(`✅ [notifications/send] Found ${users.length} users`);
         } else if (target === 'single' && validateUserId(userId)) {
             users = [userId];
+            console.log(`👤 [notifications/send] Single user: ${userId}`);
         } else {
+            console.error('❌ [notifications/send] Invalid target');
             return res.status(400).json({ success: false, error: 'Invalid target' });
+        }
+        
+        if (users.length === 0) {
+            console.warn('⚠️ [notifications/send] No users found');
+            return res.json({ success: true, sent: 0, failed: 0, total: 0 });
         }
         
         let sent = 0;
@@ -772,19 +948,29 @@ app.post('/api/admin/notifications/send', async (req, res) => {
         if (buttons && buttons.length > 0) {
             const keyboard = buttons.map(btn => ({
                 text: btn.text,
-                url: btn.url || undefined,
-                callback_data: btn.callback_data || undefined
+                url: btn.url || undefined
             }));
             replyMarkup = {
                 inline_keyboard: [keyboard]
             };
         }
         
+        console.log(`📤 [notifications/send] Sending to ${totalUsers} users in batches of ${batchSize}...`);
+        
         for (let i = 0; i < users.length; i += batchSize) {
             const batch = users.slice(i, i + batchSize);
             const promises = batch.map(async (uid) => {
                 try {
                     let response;
+                    const body = {
+                        chat_id: uid,
+                        text: message,
+                        parse_mode: 'HTML'
+                    };
+                    
+                    if (replyMarkup) {
+                        body.reply_markup = replyMarkup;
+                    }
                     
                     if (photoUrl) {
                         response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
@@ -799,15 +985,6 @@ app.post('/api/admin/notifications/send', async (req, res) => {
                             })
                         });
                     } else {
-                        const body = {
-                            chat_id: uid,
-                            text: message,
-                            parse_mode: 'HTML'
-                        };
-                        if (replyMarkup) {
-                            body.reply_markup = replyMarkup;
-                        }
-                        
                         response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -816,10 +993,15 @@ app.post('/api/admin/notifications/send', async (req, res) => {
                     }
                     
                     const data = await response.json();
-                    if (data.ok) sent++;
-                    else failed++;
+                    if (data.ok) {
+                        sent++;
+                    } else {
+                        failed++;
+                        console.warn(`⚠️ [notifications/send] Failed for ${uid}:`, data.description);
+                    }
                 } catch (error) {
                     failed++;
+                    console.error(`❌ [notifications/send] Error for ${uid}:`, error.message);
                 }
             });
             
@@ -827,12 +1009,11 @@ app.post('/api/admin/notifications/send', async (req, res) => {
             
             if (totalUsers > 0) {
                 const progress = Math.min(100, ((i + batchSize) / totalUsers) * 100);
-                const progressFill = document.getElementById('notif-progress-fill');
-                const statusText = document.getElementById('notif-status-text');
-                if (progressFill) progressFill.style.width = progress + '%';
-                if (statusText) statusText.textContent = `Sending... ${Math.min(i + batchSize, totalUsers)}/${totalUsers} (Sent: ${sent}, Failed: ${failed})`;
+                console.log(`📊 [notifications/send] Progress: ${Math.round(progress)}% (${Math.min(i + batchSize, totalUsers)}/${totalUsers})`);
             }
         }
+        
+        console.log(`✅ [notifications/send] Completed: Sent=${sent}, Failed=${failed}, Total=${totalUsers}`);
         
         await notifyAdmin(
             `<b>📨 Notification Sent</b>\n\n` +
@@ -846,6 +1027,7 @@ app.post('/api/admin/notifications/send', async (req, res) => {
         
         res.json({ success: true, sent, failed, total: totalUsers });
     } catch (error) {
+        console.error('❌ [notifications/send] Fatal error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
