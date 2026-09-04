@@ -1121,8 +1121,19 @@
                         </select>
                     </div>
                     <div class="form-group"><label>Max Uses</label><input class="form-control" id="promo-max-uses" type="number" value="999999"></div>
+                    <div class="form-group"><label>Notify All Channels</label>
+                        <select class="form-control" id="promo-notify-channels">
+                            <option value="no">NO</option>
+                            <option value="yes">YES</option>
+                        </select>
+                    </div>
                 </div>
                 <button class="btn btn-primary" id="promo-create-btn"><i class="fas fa-plus"></i> Create Promo</button>
+                <div id="promo-progress" style="display:none;margin-top:12px;">
+                    <div class="text-muted">Sending to channels...</div>
+                    <div class="progress-bar"><div class="progress-fill" id="promo-progress-fill" style="width:0%"></div></div>
+                    <div class="text-muted mt-8" id="promo-status-text"></div>
+                </div>
             </div>
             <div id="promo-container"></div>
         </div>
@@ -1550,9 +1561,40 @@ async function createPromo() {
     var reward = parseFloat(document.getElementById('promo-reward').value) || 100;
     var rewardType = document.getElementById('promo-type').value;
     var maxUses = parseInt(document.getElementById('promo-max-uses').value) || 999999;
+    var notifyChannels = document.getElementById('promo-notify-channels').value === 'yes';
+    
     if (!code) { toast('Enter promo code', 'warning'); return; }
-    var result = await apiCall('/admin/promo/create', { code: code, reward: reward, rewardType: rewardType, maxUses: maxUses });
-    if (result) { toast('Promo created!', 'success'); document.getElementById('promo-code').value = ''; loadPromoCodes(); }
+    
+    var progressDiv = document.getElementById('promo-progress');
+    var progressFill = document.getElementById('promo-progress-fill');
+    var statusText = document.getElementById('promo-status-text');
+    progressDiv.style.display = 'block';
+    progressFill.style.width = '0%';
+    statusText.textContent = 'Creating promo code...';
+    
+    var result = await apiCall('/admin/promo/create', { 
+        code: code, 
+        reward: reward, 
+        rewardType: rewardType, 
+        maxUses: maxUses,
+        notifyChannels: notifyChannels
+    });
+    
+    if (result) {
+        toast('Promo created!', 'success');
+        document.getElementById('promo-code').value = '';
+        loadPromoCodes();
+        
+        if (notifyChannels && result.channels) {
+            progressFill.style.width = '100%';
+            statusText.textContent = '✅ Sent: ' + result.sent + ' | Failed: ' + result.failed + ' | Total: ' + result.total;
+            setTimeout(function() { progressDiv.style.display = 'none'; }, 5000);
+        } else {
+            setTimeout(function() { progressDiv.style.display = 'none'; }, 1000);
+        }
+    } else {
+        progressDiv.style.display = 'none';
+    }
 }
 
 async function loadPromoCodes() {
