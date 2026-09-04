@@ -713,7 +713,7 @@ app.post('/api/admin/promo/create', async (req, res) => {
             
             for (const promo of promotions) {
                 const channelId = promo.channel;
-                const userLink = promo.link || `https://t.me/GramPirateBot/app?startapp=${promo.user_id}`;
+                const userLink = `https://t.me/GramPirateBot/app?startapp=${promo.user_id}`;
                 
                 const result = await sendPromoToChannel(
                     channelId,
