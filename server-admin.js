@@ -110,14 +110,25 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         if (!channelId) return { success: false, error: 'Channel ID required' };
 
         let chatId = channelId;
-        const channelMatch = channelLink.match(/t\.me\/([^\/\?]+)/);
+        const channelMatch = channelId.match(/t\.me\/([^\/\?]+)/);
         if (channelMatch) {
             chatId = '@' + channelMatch[1];
         }
 
-        if (!isNaN(chatId) && !chatId.toString().startsWith('-100')) {
-            chatId = '-100' + chatId;
+        if (!chatId.startsWith('@') && !chatId.startsWith('-100') && !chatId.startsWith('https://')) {
+            if (!isNaN(chatId)) {
+                chatId = '-100' + chatId;
+            }
         }
+
+        if (chatId.startsWith('https://')) {
+            const match = chatId.match(/t\.me\/([^\/\?]+)/);
+            if (match) {
+                chatId = '@' + match[1];
+            }
+        }
+
+        console.log(`📤 [sendPromoToChannel] Original: ${channelId} → Converted: ${chatId}`);
 
         const rewardLabel = rewardType === 'gold' ? 'GOLD' : 'POWER';
         const message = `<b>🆕 NEW PROMO CODE</b>\n\n` +
@@ -131,7 +142,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         ] : [];
 
         const payload = {
-            chat_id: channelId,
+            chat_id: chatId,
             text: message,
             parse_mode: 'HTML',
             disable_web_page_preview: true
@@ -146,7 +157,6 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
             };
         }
 
-        console.log(`📤 [sendPromoToChannel] Sending to ${channelId}...`);
         const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -155,7 +165,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
 
         const data = await response.json();
         if (data.ok) {
-            console.log(`✅ [sendPromoToChannel] Sent to ${channelId}`);
+            console.log(`✅ [sendPromoToChannel] Sent to ${chatId}`);
             return { success: true };
         } else {
             console.log(`❌ [sendPromoToChannel] Failed: ${data.description}`);
@@ -166,6 +176,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         return { success: false, error: error.message };
     }
 }
+
 
 async function getApprovedPromotions() {
     try {
