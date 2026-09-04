@@ -109,7 +109,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         if (!BOT_TOKEN) return { success: false, error: 'Bot not configured' };
         if (!channelId) return { success: false, error: 'Channel ID required' };
 
-        let chatId = channelLink;
+        let chatId = channelId;
         const channelMatch = channelLink.match(/t\.me\/([^\/\?]+)/);
         if (channelMatch) {
             chatId = '@' + channelMatch[1];
