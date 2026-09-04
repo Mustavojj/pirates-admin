@@ -411,7 +411,6 @@ app.post('/api/admin/tasks/create', async (req, res) => {
             owner: owner || 0,
             created_at: Date.now(),
             verification: verification !== undefined ? verification : true,
-            gold_reward: parseInt(goldReward) || 0,
             notified: false
         };
         
