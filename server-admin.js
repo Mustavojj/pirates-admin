@@ -871,11 +871,11 @@ app.post('/api/admin/promotions/update', async (req, res) => {
         if (error) throw error;
         
         await notifyUser(userId,
-            `<b>📢 Promotion Update</b>\n\n` +
-            `<b>Status:</b> ${status.toUpperCase()}\n` +
-            `<b>Channel:</b> ${userData.promotion.channel || 'N/A'}\n\n` +
-            (status === 'approved' ? `✅ Your promotion has been approved! You now receive +25% earnings.` : 
-             status === 'rejected' ? `❌ Your promotion request has been rejected. Please try again.` : 
+            `<b>🚨 Promotion Update</b>\n\n` +
+            `<b>🔰 Status:</b> ${status.toUpperCase()}\n` +
+            `<b>🔰 Channel:</b> ${userData.promotion.channel || 'N/A'}\n\n` +
+            (status === 'approved' ? `✅ Your promotion has been approved! You now receive +10% earnings.` : 
+             status === 'rejected' ? `❌ Your promotion request has been rejected.` : 
              `⏳ Your promotion request is pending review.`)
         );
         
