@@ -941,7 +941,6 @@ app.post('/api/admin/notifications/send', async (req, res) => {
                 const { data, error } = await supabase
                     .from('users')
                     .select('id')
-                    .eq('state', 'active')
                     .range(page * pageSize, (page + 1) * pageSize - 1);
                 
                 if (error) {
