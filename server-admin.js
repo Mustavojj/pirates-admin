@@ -136,7 +136,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         const message = `<b>🆕 NEW PROMO CODE</b>\n\n` +
             `<b>🔰 CODE:</b> <code>${code}</code>\n` +
             `<b>🔰 REWARD:</b> ${reward} ${rewardLabel}\n` +
-            `<b>🔰 PROGRESS:</b> 0/${total}\n\n` +
+            `<b>🔰 ACTIVATIONS:</b> ${total}\n\n` +
             `🏴‍☠️ <b>GRAM PIRATES | MINE & EARN</b>`;
 
         const buttons = userLink ? [
