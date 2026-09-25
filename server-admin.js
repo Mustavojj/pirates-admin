@@ -34,12 +34,12 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '12345';
 const ADMIN_CHAT_ID = parseInt(process.env.ADMIN_CHAT_ID) || 1891231976;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
-function validateUserId(userId) {
-    return userId && typeof userId === 'number' && userId > 0;
+function logError(endpoint, error, extra = {}) {
+    console.error(`❌ [${endpoint}] FAILED:`, error?.message || error, JSON.stringify(extra));
 }
 
-function validateString(value, maxLength = 255) {
-    return value && typeof value === 'string' && value.length <= maxLength;
+function validateUserId(userId) {
+    return userId && typeof userId === 'number' && userId > 0;
 }
 
 function validateNumber(value, min = 0, max = Infinity) {
@@ -61,7 +61,7 @@ async function notifyUser(userId, message, buttons = null) {
         const data = await response.json();
         return data.ok;
     } catch (error) {
-        console.error('❌ [notifyUser] Error:', error.message);
+        logError('notifyUser', error, { userId });
         return false;
     }
 }
@@ -77,7 +77,7 @@ async function notifyAdmin(message) {
         const data = await response.json();
         return data.ok;
     } catch (error) {
-        console.error('❌ [notifyAdmin] Error:', error.message);
+        logError('notifyAdmin', error);
         return false;
     }
 }
@@ -139,7 +139,7 @@ async function sendPromoToChannel(channelId, code, reward, rewardType, total, us
         if (data.ok) return { success: true };
         return { success: false, error: data.description || 'Unknown error' };
     } catch (error) {
-        console.error('❌ [sendPromoToChannel] Error:', error.message);
+        logError('sendPromoToChannel', error, { channelId });
         return { success: false, error: error.message };
     }
 }
@@ -162,7 +162,7 @@ async function getApprovedPromotions() {
             username: u.promotion?.username || null
         })).filter(p => p.channel);
     } catch (error) {
-        console.error('❌ [getApprovedPromotions] Error:', error.message);
+        logError('getApprovedPromotions', error);
         return [];
     }
 }
@@ -193,6 +193,7 @@ app.post('/api/admin/stats', async (req, res) => {
             }
         });
     } catch (error) {
+        logError('/api/admin/stats', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -235,11 +236,15 @@ app.post('/api/admin/users/search', async (req, res) => {
             gold_balance: parseFloat((u.gold_balance || 0).toFixed(5)),
             power_balance: u.power_balance || 0,
             gram_balance: parseFloat((u.gram_balance || 0).toFixed(5)),
-            level: u.level || 1
+            level: u.level || 1,
+            total_tasks_completed: u.total_tasks_completed || 0,
+            promo_codes_created: u.promo_codes_created || 0,
+            special_tasks_count: u.special_tasks_count || 0
         }));
 
         res.json({ success: true, data: users });
     } catch (error) {
+        logError('/api/admin/users/search', error, { query: req.body?.query });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -252,6 +257,7 @@ app.post('/api/admin/users/ban', async (req, res) => {
         if (error) throw error;
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/users/ban', error, { userId: req.body?.userId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -264,6 +270,7 @@ app.post('/api/admin/users/unban', async (req, res) => {
         if (error) throw error;
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/users/unban', error, { userId: req.body?.userId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -281,10 +288,12 @@ app.post('/api/admin/users/delete', async (req, res) => {
         await supabase.from('tasks').delete().eq('owner', userId);
         await supabase.from('special_tasks').delete().eq('owner', userId);
         await supabase.from('promo_codes').delete().eq('owner', userId);
-        await supabase.from('users').delete().eq('id', userId);
+        const { error } = await supabase.from('users').delete().eq('id', userId);
+        if (error) throw error;
 
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/users/delete', error, { userId: req.body?.userId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -308,6 +317,7 @@ app.post('/api/admin/balance/add', async (req, res) => {
         if (error) throw error;
         res.json({ success: true, newBalance });
     } catch (error) {
+        logError('/api/admin/balance/add', error, { userId: req.body?.userId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -333,6 +343,7 @@ app.post('/api/admin/balance/deduct', async (req, res) => {
         if (error) throw error;
         res.json({ success: true, newBalance });
     } catch (error) {
+        logError('/api/admin/balance/deduct', error, { userId: req.body?.userId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -341,8 +352,14 @@ app.post('/api/admin/tasks/create', async (req, res) => {
     try {
         const { name, url, category, reward, maxCompletions, owner, goldReward, verification } = req.body;
 
-        if (!name || !url) return res.status(400).json({ success: false, error: 'Missing required fields' });
-        if (!validateNumber(reward, 1)) return res.status(400).json({ success: false, error: 'Invalid reward amount' });
+        if (!name || !url) {
+            logError('/api/admin/tasks/create', new Error('Missing name or url'), { body: req.body });
+            return res.status(400).json({ success: false, error: 'Missing required fields (name, url)' });
+        }
+        if (!validateNumber(reward, 1)) {
+            logError('/api/admin/tasks/create', new Error('Invalid reward'), { reward });
+            return res.status(400).json({ success: false, error: 'Invalid reward amount' });
+        }
 
         const isSpecial = category === 'special';
         const taskId = (isSpecial ? 'special_' : 'task_') + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
@@ -364,7 +381,10 @@ app.post('/api/admin/tasks/create', async (req, res) => {
             };
 
             const { data, error } = await supabase.from('special_tasks').insert([taskData]).select();
-            if (error) throw error;
+            if (error) {
+                logError('/api/admin/tasks/create (special)', error, { taskData });
+                throw error;
+            }
             return res.json({ success: true, data: data[0] });
         }
 
@@ -384,9 +404,13 @@ app.post('/api/admin/tasks/create', async (req, res) => {
         };
 
         const { data, error } = await supabase.from('tasks').insert([taskData]).select();
-        if (error) throw error;
+        if (error) {
+            logError('/api/admin/tasks/create (regular)', error, { taskData });
+            throw error;
+        }
         res.json({ success: true, data: data[0] });
     } catch (error) {
+        logError('/api/admin/tasks/create', error, { body: req.body });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -395,11 +419,8 @@ app.post('/api/admin/tasks/list', async (req, res) => {
     try {
         const { taskId, status, owner, category, creator } = req.body;
 
-        const specialResult = supabase.from('special_tasks').select('*');
-        const regularResult = supabase.from('tasks').select('*');
-
-        let specialQuery = specialResult;
-        let regularQuery = regularResult;
+        let specialQuery = supabase.from('special_tasks').select('*');
+        let regularQuery = supabase.from('tasks').select('*');
 
         if (taskId) {
             specialQuery = specialQuery.eq('id', taskId);
@@ -421,17 +442,20 @@ app.post('/api/admin/tasks/list', async (req, res) => {
             regularQuery = regularQuery.eq('id', '__none__');
         }
         if (creator === 'admin') {
-            specialQuery = specialQuery.eq('owner', 0);
-            regularQuery = regularQuery.eq('owner', 0);
+            specialQuery = specialQuery.or('owner.eq.0,owner.is.null');
+            regularQuery = regularQuery.or('owner.eq.0,owner.is.null');
         } else if (creator === 'user') {
-            specialQuery = specialQuery.neq('owner', 0);
-            regularQuery = regularQuery.neq('owner', 0);
+            specialQuery = specialQuery.not('owner', 'is', null).neq('owner', 0);
+            regularQuery = regularQuery.not('owner', 'is', null).neq('owner', 0);
         }
 
-        const [{ data: specialData }, { data: regularData }] = await Promise.all([
+        const [{ data: specialData, error: sErr }, { data: regularData, error: rErr }] = await Promise.all([
             specialQuery.order('created_at', { ascending: false }).limit(100),
             regularQuery.order('created_at', { ascending: false }).limit(100)
         ]);
+
+        if (sErr) logError('/api/admin/tasks/list (special)', sErr);
+        if (rErr) logError('/api/admin/tasks/list (regular)', rErr);
 
         const specialFormatted = (specialData || []).map(t => ({
             ...t,
@@ -451,6 +475,7 @@ app.post('/api/admin/tasks/list', async (req, res) => {
 
         res.json({ success: true, data: all });
     } catch (error) {
+        logError('/api/admin/tasks/list', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -478,6 +503,7 @@ app.post('/api/admin/tasks/update-status', async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/tasks/update-status', error, { taskId: req.body?.taskId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -499,6 +525,7 @@ app.post('/api/admin/tasks/delete', async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/tasks/delete', error, { taskId: req.body?.taskId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -520,6 +547,7 @@ app.post('/api/admin/withdrawals/list', async (req, res) => {
 
         res.json({ success: true, data });
     } catch (error) {
+        logError('/api/admin/withdrawals/list', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -549,6 +577,7 @@ app.post('/api/admin/withdrawals/update-status', async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/withdrawals/update-status', error, { transactionId: req.body?.transactionId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -561,6 +590,7 @@ app.post('/api/admin/withdrawals/delete', async (req, res) => {
         if (error) throw error;
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/withdrawals/delete', error, { transactionId: req.body?.transactionId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -569,7 +599,10 @@ app.post('/api/admin/promo/create', async (req, res) => {
     try {
         const { code, reward, rewardType, maxUses, notifyChannels } = req.body;
 
-        if (!code || !reward) return res.status(400).json({ success: false, error: 'Missing required fields' });
+        if (!code || !reward) {
+            logError('/api/admin/promo/create', new Error('Missing code or reward'), { body: req.body });
+            return res.status(400).json({ success: false, error: 'Missing required fields' });
+        }
         if (!validateNumber(reward, 1)) return res.status(400).json({ success: false, error: 'Invalid reward amount' });
         if (!['power', 'gold'].includes(rewardType)) return res.status(400).json({ success: false, error: 'Invalid reward type' });
 
@@ -585,7 +618,10 @@ app.post('/api/admin/promo/create', async (req, res) => {
         };
 
         const { data, error } = await supabase.from('promo_codes').insert([promoData]).select();
-        if (error) throw error;
+        if (error) {
+            logError('/api/admin/promo/create (insert)', error, { promoData });
+            throw error;
+        }
 
         let sent = 0;
         let failed = 0;
@@ -609,6 +645,7 @@ app.post('/api/admin/promo/create', async (req, res) => {
 
         res.json({ success: true, data: data[0], sent, failed, total, channels: true });
     } catch (error) {
+        logError('/api/admin/promo/create', error, { body: req.body });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -631,6 +668,7 @@ app.post('/api/admin/promo/list', async (req, res) => {
 
         res.json({ success: true, data: data || [] });
     } catch (error) {
+        logError('/api/admin/promo/list', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -643,6 +681,7 @@ app.post('/api/admin/promo/delete', async (req, res) => {
         await supabase.from('used_promo_codes').delete().eq('code', code);
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/promo/delete', error, { code: req.body?.code });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -671,6 +710,7 @@ app.post('/api/admin/promotions/list', async (req, res) => {
 
         res.json({ success: true, data: formattedData });
     } catch (error) {
+        logError('/api/admin/promotions/list', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -697,6 +737,7 @@ app.post('/api/admin/promotions/update', async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/promotions/update', error, { userId: req.body?.userId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -709,6 +750,7 @@ app.post('/api/admin/promotions/delete', async (req, res) => {
         if (error) throw error;
         res.json({ success: true });
     } catch (error) {
+        logError('/api/admin/promotions/delete', error, { userId: req.body?.userId });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -791,6 +833,7 @@ app.post('/api/admin/notifications/send', async (req, res) => {
 
         res.json({ success: true, sent, failed, total: users.length });
     } catch (error) {
+        logError('/api/admin/notifications/send', error, { target: req.body?.target });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -818,6 +861,7 @@ app.post('/api/admin/topusers/list', async (req, res) => {
 
         res.json({ success: true, data: formattedData });
     } catch (error) {
+        logError('/api/admin/topusers/list', error, { type: req.body?.type });
         res.status(500).json({ success: false, error: error.message });
     }
 });
