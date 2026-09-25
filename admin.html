@@ -47,7 +47,6 @@
                 radial-gradient(ellipse at 80% 100%, rgba(255, 215, 0, 0.04) 0%, transparent 50%);
         }
 
-        /* ====== LOGIN ====== */
         .login-screen {
             position: fixed;
             inset: 0;
@@ -145,7 +144,6 @@
         .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--primary-glow); }
         .login-error { color: var(--error); font-size: 13px; min-height: 20px; }
 
-        /* ====== LAYOUT ====== */
         .container { max-width: 1440px; margin: 0 auto; }
 
         .header {
@@ -183,7 +181,6 @@
 
         .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        /* ====== STATS ====== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -244,7 +241,6 @@
 
         .stat-card .label i { color: var(--gold); font-size: 12px; }
 
-        /* ====== TABS ====== */
         .tabs {
             display: flex;
             gap: 4px;
@@ -297,7 +293,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ====== CARDS ====== */
         .panel-card {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
@@ -333,7 +328,6 @@
             font-size: 13px;
         }
 
-        /* ====== FORMS ====== */
         .form-group { margin-bottom: 14px; }
 
         .form-group label {
@@ -367,7 +361,6 @@
         select.form-control { appearance: none; cursor: pointer; }
         textarea.form-control { resize: vertical; min-height: 90px; }
 
-        /* ====== BUTTONS ====== */
         .btn {
             padding: 10px 18px;
             border: none;
@@ -409,7 +402,6 @@
         .btn-sm { padding: 6px 14px; font-size: 11px; }
         .btn-icon { width: 34px; height: 34px; padding: 0; border-radius: 10px; }
 
-        /* ====== FILTERS ====== */
         .filter-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -423,7 +415,6 @@
             flex-wrap: wrap;
         }
 
-        /* ====== BADGES ====== */
         .badge {
             display: inline-flex;
             align-items: center;
@@ -444,7 +435,6 @@
         .badge-admin { background: rgba(52, 152, 219, 0.15); color: var(--info); }
         .badge-user { background: rgba(149, 165, 166, 0.15); color: #95a5a6; }
 
-        /* ====== USER CARD ====== */
         .user-card {
             background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
@@ -559,7 +549,6 @@
         .action-unban { background: linear-gradient(135deg, #2ecc71, #27ae60); }
         .action-delete { background: linear-gradient(135deg, #8e44ad, #6c3483); }
 
-        /* ====== MODAL ====== */
         .modal {
             position: fixed;
             inset: 0;
@@ -608,7 +597,6 @@
 
         .modal-actions .btn { flex: 1; }
 
-        /* ====== TASK / PROMO CARDS ====== */
         .list-card {
             background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
@@ -669,7 +657,6 @@
             flex-wrap: wrap;
         }
 
-        /* ====== PROGRESS ====== */
         .progress-row {
             display: flex;
             align-items: center;
@@ -699,7 +686,6 @@
             flex-shrink: 0;
         }
 
-        /* ====== TOAST ====== */
         .toast-container {
             position: fixed;
             bottom: 20px;
@@ -708,7 +694,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-width: 380px;
+            max-width: 420px;
         }
 
         .toast {
@@ -721,6 +707,8 @@
             font-size: 13px;
             font-weight: 500;
             backdrop-filter: blur(12px);
+            max-width: 100%;
+            word-wrap: break-word;
         }
 
         .toast.success { border-left: 4px solid var(--success); }
@@ -733,7 +721,6 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        /* ====== EMPTY STATE ====== */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -743,7 +730,6 @@
         .empty-state i { font-size: 40px; opacity: 0.3; margin-bottom: 12px; display: block; }
         .empty-state p { font-size: 13px; }
 
-        /* ====== TOP USERS ====== */
         .topusers-grid {
             display: flex;
             flex-direction: column;
@@ -781,7 +767,6 @@
         .topuser-item .user-info .id { font-size: 10px; color: var(--text-muted); font-family: monospace; }
         .topuser-item .value { text-align: right; font-weight: 700; color: var(--gold); font-size: 14px; font-family: 'Courier New', monospace; }
 
-        /* ====== NOTIF ====== */
         .notif-preview {
             background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
@@ -810,7 +795,6 @@
 
         .tag-chip i { cursor: pointer; color: var(--error); font-size: 10px; }
 
-        /* ====== UTILITY ====== */
         .flex { display: flex; align-items: center; gap: 8px; }
         .flex-wrap { flex-wrap: wrap; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -822,7 +806,6 @@
         .text-muted { color: var(--text-muted); font-size: 12px; }
         .text-center { text-align: center; }
 
-        /* ====== RESPONSIVE ====== */
         @media (max-width: 700px) {
             body { padding: 12px; }
             .grid-2 { grid-template-columns: 1fr; }
@@ -836,7 +819,6 @@
             .user-actions-grid { grid-template-columns: 1fr 1fr; }
         }
 
-        /* Loading Spinner */
         .spinner {
             display: inline-block;
             width: 16px;
@@ -896,7 +878,6 @@
             <div class="tab" data-tab="topusers"><i class="fas fa-chart-line"></i><span> Top Users</span></div>
         </div>
 
-        <!-- ====== USERS TAB ====== -->
         <div class="tab-content active" id="tab-users">
             <div class="panel-card">
                 <div class="card-title"><i class="fas fa-search"></i> Search Users</div>
@@ -910,7 +891,6 @@
             </div>
         </div>
 
-        <!-- ====== TASKS TAB ====== -->
         <div class="tab-content" id="tab-tasks">
             <div class="panel-card">
                 <div class="card-title"><i class="fas fa-plus-circle"></i> Create Task</div>
@@ -928,7 +908,7 @@
                     <div class="form-group"><label>Reward Power</label><input class="form-control" id="task-create-reward" type="number" value="10"></div>
                     <div class="form-group" id="task-max-group"><label>Max Completions</label><input class="form-control" id="task-create-max" type="number" value="100"></div>
                     <div class="form-group"><label>Owner ID</label><input class="form-control" id="task-create-owner" type="number" placeholder="0 = Admin"></div>
-                    <div class="form-group" id="task-gold-group"><label>Gold Reward (Social only)</label><input class="form-control" id="task-create-gold" type="number" value="1"></div>
+                    <div class="form-group" id="task-gold-group"><label>Gold Reward (Special / Social)</label><input class="form-control" id="task-create-gold" type="number" value="5"></div>
                     <div class="form-group"><label>Verification Required</label>
                         <select class="form-control" id="task-create-verification">
                             <option value="true">Yes</option>
@@ -973,7 +953,6 @@
             <div id="tasks-container"></div>
         </div>
 
-        <!-- ====== WITHDRAWALS TAB ====== -->
         <div class="tab-content" id="tab-withdrawals">
             <div class="panel-card">
                 <div class="card-title"><i class="fas fa-filter"></i> Filter Withdrawals</div>
@@ -989,12 +968,12 @@
                 </div>
                 <div class="filter-actions">
                     <button class="btn btn-primary" id="withdrawal-search-btn"><i class="fas fa-search"></i> Search</button>
+                    <button class="btn btn-outline" onclick="clearWithdrawalFilters()"><i class="fas fa-times"></i> Clear</button>
                 </div>
             </div>
             <div id="withdrawals-container"></div>
         </div>
 
-        <!-- ====== PROMO TAB ====== -->
         <div class="tab-content" id="tab-promo">
             <div class="panel-card">
                 <div class="card-title"><i class="fas fa-plus-circle"></i> Create Promo Code</div>
@@ -1053,7 +1032,6 @@
             <div id="promo-container"></div>
         </div>
 
-        <!-- ====== PROMOTIONS TAB ====== -->
         <div class="tab-content" id="tab-promotions">
             <div class="panel-card">
                 <div class="card-title"><i class="fas fa-filter"></i> Filter Promotions</div>
@@ -1075,7 +1053,6 @@
             <div id="promotions-container"></div>
         </div>
 
-        <!-- ====== NOTIFICATIONS TAB ====== -->
         <div class="tab-content" id="tab-notifications">
             <div class="panel-card">
                 <div class="card-title"><i class="fas fa-bell"></i> Send Notification</div>
@@ -1131,7 +1108,6 @@
             </div>
         </div>
 
-        <!-- ====== TOP USERS TAB ====== -->
         <div class="tab-content" id="tab-topusers">
             <div class="panel-card">
                 <div class="card-title"><i class="fas fa-chart-line"></i> Top Users</div>
@@ -1158,7 +1134,6 @@
     </div>
 </div>
 
-<!-- ====== BALANCE MODAL ====== -->
 <div class="modal" id="balance-modal">
     <div class="modal-content">
         <div class="modal-title"><i class="fas fa-coins"></i> <span id="balance-modal-title">Modify Balance</span></div>
@@ -1174,7 +1149,6 @@
     </div>
 </div>
 
-<!-- ====== CONFIRM MODAL ====== -->
 <div class="modal" id="confirm-modal">
     <div class="modal-content">
         <div class="modal-title" id="confirm-title"><i class="fas fa-exclamation-triangle"></i> Confirm</div>
@@ -1204,18 +1178,15 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
             const tabId = this.getAttribute('data-tab');
             document.getElementById('tab-' + tabId).classList.add('active');
-            if (tabId === 'withdrawals') loadWithdrawals();
-            if (tabId === 'promo') loadPromoCodes();
-            if (tabId === 'promotions') loadPromotions();
         });
     });
 
     const catSelect = document.getElementById('task-create-category');
     if (catSelect) {
         catSelect.addEventListener('change', function() {
-            const isSpecial = this.value === 'special';
-            document.getElementById('task-max-group').style.display = isSpecial ? 'none' : 'block';
-            document.getElementById('task-gold-group').style.display = (isSpecial || this.value !== 'social') ? 'none' : 'block';
+            const cat = this.value;
+            document.getElementById('task-max-group').style.display = (cat === 'special') ? 'none' : 'block';
+            document.getElementById('task-gold-group').style.display = (cat === 'special' || cat === 'social') ? 'block' : 'none';
         });
         catSelect.dispatchEvent(new Event('change'));
     }
@@ -1283,7 +1254,7 @@ function toast(message, type) {
         el.style.opacity = '0';
         el.style.transform = 'translateX(50px)';
         setTimeout(function() { el.remove(); }, 300);
-    }, 3500);
+    }, 4500);
 }
 
 async function apiCall(endpoint, data) {
@@ -1295,11 +1266,52 @@ async function apiCall(endpoint, data) {
             body: JSON.stringify(data)
         });
         const result = await response.json();
+
+        if (!response.ok) {
+            const errMsg = result.error || result.message || ('HTTP ' + response.status);
+            console.error('❌ [API] ' + endpoint + ':', errMsg);
+            toast(errMsg, 'error');
+            return null;
+        }
+
+        if (result && result.success === false) {
+            const errMsg = result.error || 'Operation failed';
+            console.error('❌ [API] ' + endpoint + ':', errMsg);
+            toast(errMsg, 'error');
+            return result;
+        }
+
         return result;
     } catch (e) {
+        console.error('❌ [API] ' + endpoint + ' network error:', e.message);
         toast('Network error: ' + e.message, 'error');
         return null;
     }
+}
+
+function formatNumber(num) {
+    num = parseFloat(num) || 0;
+    if (num >= 1000000) return (num / 1000000).toFixed(3) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(3) + 'K';
+    return num.toFixed(num % 1 === 0 ? 0 : 3);
+}
+
+function formatDate(ts) {
+    if (!ts) return 'N/A';
+    const d = new Date(ts);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return day + '.' + month + '.' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
+}
+
+function truncate(str, len) {
+    if (!str) return 'User';
+    return str.length > len ? str.substring(0, len) + '…' : str;
 }
 
 function initApp() {
@@ -1330,7 +1342,6 @@ function setupEventListeners() {
     document.getElementById('promotion-search-btn').addEventListener('click', loadPromotions);
 }
 
-// ============ STATS ============
 async function loadStats() {
     const result = await apiCall('/admin/stats');
     if (result && result.success) {
@@ -1341,7 +1352,6 @@ async function loadStats() {
     }
 }
 
-// ============ USERS ============
 async function loadUsers() {
     const query = document.getElementById('user-search-input').value.trim();
     const container = document.getElementById('user-result');
@@ -1418,14 +1428,6 @@ function renderUserCard(u) {
     `;
 }
 
-function formatNumber(num) {
-    num = parseFloat(num) || 0;
-    if (num >= 1000000) return (num / 1000000).toFixed(3) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(3) + 'K';
-    return num.toFixed(num % 1 === 0 ? 0 : 3);
-}
-
-// ============ BALANCE MODAL ============
 let balanceModalData = null;
 
 function openBalanceModal(userId, type, action, userName) {
@@ -1462,12 +1464,9 @@ document.getElementById('balance-confirm-btn')?.addEventListener('click', async 
         toast(action === 'add' ? 'Balance added!' : 'Balance deducted!', 'success');
         closeBalanceModal();
         loadUsers();
-    } else if (result) {
-        toast(result.error || 'Failed', 'error');
     }
 });
 
-// ============ BAN/UNBAN/DELETE ============
 let confirmCallback = null;
 
 function showConfirm(title, message, callback, danger = true) {
@@ -1520,12 +1519,14 @@ async function deleteUser(userId) {
         const result = await apiCall('/admin/users/delete', { userId });
         if (result && result.success) {
             toast('User deleted permanently', 'success');
-            loadUsers();
+            const searchVal = document.getElementById('user-search-input').value.trim();
+            if (searchVal) loadUsers();
+            const topusersContainer = document.getElementById('topusers-container');
+            if (topusersContainer && topusersContainer.querySelector('.topusers-grid')) loadTopUsers();
         }
     });
 }
 
-// ============ TASKS ============
 async function createTask() {
     const name = document.getElementById('task-create-name').value.trim();
     const url = document.getElementById('task-create-url').value.trim();
@@ -1533,18 +1534,25 @@ async function createTask() {
     const reward = parseInt(document.getElementById('task-create-reward').value) || 10;
     const maxCompletions = category === 'special' ? 999999 : parseInt(document.getElementById('task-create-max').value) || 100;
     const owner = parseInt(document.getElementById('task-create-owner').value) || 0;
-    const goldReward = category === 'social' ? parseInt(document.getElementById('task-create-gold').value) || 1 : 0;
+    const goldReward = parseInt(document.getElementById('task-create-gold').value) || 5;
     const verification = document.getElementById('task-create-verification').value === 'true';
 
-    if (!name) { toast('Enter task name', 'warning'); return; }
-    if (!url) { toast('Enter task URL', 'warning'); return; }
+    if (!name || name.length < 3) { toast('Enter a valid task name (3+ chars)', 'warning'); return; }
+    if (!url || !url.startsWith('https://')) { toast('Enter a valid URL starting with https://', 'warning'); return; }
+
+    const btn = document.getElementById('task-create-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating...';
 
     const result = await apiCall('/admin/tasks/create', {
         name, url, category, reward, maxCompletions, owner, goldReward, verification
     });
 
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-plus"></i> Create Task';
+
     if (result && result.success) {
-        toast('Task created!', 'success');
+        toast('Task created successfully!', 'success');
         document.getElementById('task-create-name').value = '';
         document.getElementById('task-create-url').value = '';
         loadTasks();
@@ -1598,7 +1606,7 @@ function renderTaskCard(t) {
         t.status === 'completed' ? 'badge-completed' : 'badge-rejected';
     const isUnlimited = t.category === 'special' || !t.total;
     const progress = !isUnlimited && t.total > 0 ? (t.total_completed / t.total * 100) : 0;
-    const isAdminTask = t.owner === 0 || t.owner === null;
+    const isAdminTask = t.owner === 0 || t.owner === null || t.owner === undefined;
     const isSpecial = t.category === 'special';
 
     const catIcon = t.category === 'social' ? 'fa-users' :
@@ -1618,7 +1626,7 @@ function renderTaskCard(t) {
                 <span class="badge ${statusClass}">${t.status}</span>
             </div>
             <div class="list-card-body">
-                <div class="row"><span class="label">Owner:</span> <span>${t.owner || 'Admin'}</span></div>
+                <div class="row"><span class="label">Owner:</span> <span>${isAdminTask ? 'Admin' : (t.owner || 'N/A')}</span></div>
                 <div class="row"><span class="label">URL:</span> <a href="${t.url}" target="_blank">${t.url}</a></div>
                 <div class="row">
                     <span class="label">Reward:</span>
@@ -1652,11 +1660,21 @@ async function deleteTask(taskId) {
     });
 }
 
-// ============ WITHDRAWALS ============
+function clearWithdrawalFilters() {
+    document.getElementById('withdrawal-search-user').value = '';
+    document.getElementById('withdrawal-search-status').value = '';
+    document.getElementById('withdrawals-container').innerHTML = '';
+}
+
 async function loadWithdrawals() {
     const userId = document.getElementById('withdrawal-search-user').value;
     const status = document.getElementById('withdrawal-search-status').value;
     const container = document.getElementById('withdrawals-container');
+
+    if (!userId && !status) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-filter"></i><p>Choose a filter and click Search</p></div>';
+        return;
+    }
 
     container.innerHTML = '<div class="text-center mt-12"><span class="spinner"></span></div>';
 
@@ -1679,19 +1697,21 @@ async function loadWithdrawals() {
     container.innerHTML = withdrawals.map(w => {
         const statusClass = w.status === 'completed' ? 'badge-completed' :
             w.status === 'pending' ? 'badge-pending' : 'badge-rejected';
-        const date = new Date(w.timestamp);
-        const dateStr = date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const dateStr = formatDate(w.timestamp);
+        const goldAmount = Math.abs(parseFloat(w.amount || 0));
+        const gramAmount = (goldAmount / 10000).toFixed(4);
         return `
             <div class="list-card">
                 <div class="list-card-header">
                     <div class="list-card-title">
-                        <span class="list-card-name">${Math.abs(w.amount || 0).toFixed(5)} GRAM</span>
+                        <span class="list-card-name">${gramAmount} GRAM</span>
                         <span class="list-card-id">#${w.id}</span>
                     </div>
                     <span class="badge ${statusClass}">${w.status}</span>
                 </div>
                 <div class="list-card-body">
                     <div class="row"><span class="label">User:</span> <span>${w.user_id}</span></div>
+                    <div class="row"><span class="label">Gold:</span> <span>${formatNumber(goldAmount)}</span></div>
                     <div class="row"><span class="label">Wallet:</span> <span style="font-family:monospace;font-size:11px;">${w.wallet || 'N/A'}</span></div>
                     <div class="row"><span class="label">Date:</span> <span>${dateStr}</span></div>
                 </div>
@@ -1719,7 +1739,6 @@ async function deleteWithdrawal(transactionId) {
     });
 }
 
-// ============ PROMO ============
 function generatePromo() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -1734,25 +1753,35 @@ async function createPromo() {
     const maxUses = parseInt(document.getElementById('promo-max-uses').value) || 999999;
     const notifyChannels = document.getElementById('promo-notify-channels').value === 'yes';
 
-    if (!code) { toast('Enter promo code', 'warning'); return; }
+    if (!code || code.length < 3) { toast('Enter a valid code (3+ chars)', 'warning'); return; }
 
     const progressDiv = document.getElementById('promo-progress');
     const progressFill = document.getElementById('promo-progress-fill');
     const statusText = document.getElementById('promo-status-text');
+
+    const btn = document.getElementById('promo-create-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating...';
+
     progressDiv.style.display = 'block';
-    progressFill.style.width = '0%';
+    progressFill.style.width = '30%';
     statusText.textContent = 'Creating promo...';
 
     const result = await apiCall('/admin/promo/create', { code, reward, rewardType, maxUses, notifyChannels });
 
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-plus"></i> Create Promo';
+
     if (result && result.success) {
         toast('Promo created!', 'success');
         document.getElementById('promo-code').value = '';
-        if (notifyChannels && result.channels !== undefined) {
-            progressFill.style.width = '100%';
-            statusText.textContent = '✅ Sent: ' + result.sent + ' | Failed: ' + result.failed + ' | Total: ' + result.total;
+        progressFill.style.width = '100%';
+        if (notifyChannels && result.total !== undefined) {
+            statusText.textContent = '✅ Sent: ' + (result.sent || 0) + ' | Failed: ' + (result.failed || 0) + ' | Total: ' + (result.total || 0);
+        } else {
+            statusText.textContent = '✅ Created!';
         }
-        setTimeout(() => progressDiv.style.display = 'none', 3000);
+        setTimeout(() => progressDiv.style.display = 'none', 4000);
         loadPromoCodes();
     } else {
         progressDiv.style.display = 'none';
@@ -1842,7 +1871,6 @@ async function deletePromo(code) {
     });
 }
 
-// ============ PROMOTIONS ============
 function clearPromotionFilters() {
     document.getElementById('promotion-search-user').value = '';
     document.getElementById('promotion-search-channel').value = '';
@@ -1877,9 +1905,8 @@ async function loadPromotions() {
 
     container.innerHTML = promos.map(p => {
         const statusClass = p.status || 'pending';
-        const statusLabel = p.status === 'approved' ? '✅ Approved' : p.status === 'rejected' ? '❌ Rejected' : '⏳ Pending';
-        const date = new Date(p.submitted_at || Date.now());
-        const dateStr = date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const statusLabel = p.status === 'approved' ? 'Approved' : p.status === 'rejected' ? 'Rejected' : 'Pending';
+        const dateStr = formatDate(p.submitted_at);
         return `
             <div class="list-card">
                 <div class="list-card-header">
@@ -1918,7 +1945,6 @@ async function deletePromotion(userId) {
     });
 }
 
-// ============ NOTIFICATIONS ============
 function toggleNotifUser() {
     document.getElementById('notif-user-group').style.display = this.value === 'single' ? 'block' : 'none';
 }
@@ -1958,6 +1984,10 @@ async function sendNotification() {
     if (!message) { toast('Enter message', 'warning'); return; }
     if (target === 'single' && !userId) { toast('Enter user ID', 'warning'); return; }
 
+    const btn = document.getElementById('notif-send-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending...';
+
     const progressDiv = document.getElementById('notif-progress');
     const progressFill = document.getElementById('notif-progress-fill');
     const statusText = document.getElementById('notif-status-text');
@@ -1969,6 +1999,9 @@ async function sendNotification() {
         userId, message, buttons: notifButtons.length > 0 ? notifButtons : null, target, photoUrl
     });
 
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Notification';
+
     if (result && result.success) {
         progressFill.style.width = '100%';
         statusText.textContent = '✅ Sent: ' + result.sent + ' | Failed: ' + result.failed + ' | Total: ' + result.total;
@@ -1979,7 +2012,6 @@ async function sendNotification() {
     }
 }
 
-// ============ TOP USERS ============
 async function loadTopUsers() {
     const type = document.getElementById('topusers-type').value;
     const limit = parseInt(document.getElementById('topusers-limit').value) || 20;
@@ -2008,7 +2040,7 @@ async function loadTopUsers() {
                 <div class="user-info">
                     <img src="${user.photo_url || 'https://i.ibb.co/W4FRWY3z/c53854a65b5a.jpg'}" onerror="this.src='https://i.ibb.co/W4FRWY3z/c53854a65b5a.jpg'">
                     <div>
-                        <div class="name">${user.first_name || 'User'}</div>
+                        <div class="name">${truncate(user.first_name, 12)}</div>
                         <div class="id">ID: ${user.user_id}</div>
                     </div>
                 </div>
